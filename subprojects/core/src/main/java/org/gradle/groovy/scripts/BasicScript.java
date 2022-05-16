@@ -158,8 +158,8 @@ public abstract class BasicScript extends org.gradle.groovy.scripts.Script imple
         }
 
         @Override
-        public MissingMethodException methodMissingException(String name, Object... params) {
-            return dynamicTarget.methodMissingException(name, params);
+        public MissingMethodException methodMissingException(DynamicInvokeResult result, String name, Object... params) {
+            return dynamicTarget.methodMissingException(result, name, params);
         }
 
         @Override

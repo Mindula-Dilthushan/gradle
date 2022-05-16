@@ -16,7 +16,7 @@
 
 package org.gradle.internal.metaobject
 
-import org.gradle.metaobject.ProvidesMissingMethodContext
+
 import spock.lang.Specification
 
 class CompositeDynamicObjectTest extends Specification {

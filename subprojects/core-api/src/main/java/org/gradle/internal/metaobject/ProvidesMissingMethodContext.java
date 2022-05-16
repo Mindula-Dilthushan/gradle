@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,8 @@
 
 package org.gradle.internal.metaobject;
 
-/**
- * A decorated domain object type may optionally implement this interface to dynamically expose methods in addition to those declared statically on the type.
- *
- * Note that when a type implements this interface, dynamic Groovy dispatch will not be used to discover opaque methods. That is, methods such as methodMissing() will be ignored.
- */
-public interface MethodMixIn {
-    MethodAccess getAdditionalMethods();
+import org.gradle.internal.metaobject.DynamicInvokeResult.AdditionalContext;
+
+public interface ProvidesMissingMethodContext {
+    AdditionalContext getAdditionalContext(String name, Object... arguments);
 }

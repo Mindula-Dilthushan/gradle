@@ -36,9 +36,8 @@ import org.gradle.api.provider.ValueSource;
 import org.gradle.internal.Cast;
 import org.gradle.internal.metaobject.DynamicInvokeResult;
 import org.gradle.internal.metaobject.DynamicInvokeResult.AdditionalContext;
-import org.gradle.internal.metaobject.MethodAccess;
+import org.gradle.internal.metaobject.MethodAccessWithContext;
 import org.gradle.internal.metaobject.MethodMixIn;
-import org.gradle.metaobject.ProvidesMissingMethodContext;
 import org.gradle.util.internal.CollectionUtils;
 
 import javax.annotation.Nullable;
@@ -46,7 +45,7 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class DefaultJvmComponentDependencies implements JvmComponentDependencies, MethodMixIn, ProvidesMissingMethodContext {
+public abstract class DefaultJvmComponentDependencies implements JvmComponentDependencies, MethodMixIn {
     private final Configuration implementation;
     private final Configuration compileOnly;
     private final Configuration runtimeOnly;
@@ -164,14 +163,9 @@ public abstract class DefaultJvmComponentDependencies implements JvmComponentDep
     }
 
     @Override
-    public AdditionalContext getAdditionalContext(String name, Object... arguments) {
-        return AdditionalContext.forString("Don't call this here!");
-    }
-
-    @Override
-    public MethodAccess getAdditionalMethods() {
+    public MethodAccessWithContext getAdditionalMethods() {
         ConfigurationContainer configurationContainer = getConfigurationContainer();
-        return new MethodAccess() {
+        return new MethodAccessWithContext() {
             @Override
             public boolean hasMethod(String name, Object... arguments) {
                 return arguments.length != 0 && configurationContainer.findByName(name) != null;
@@ -184,7 +178,7 @@ public abstract class DefaultJvmComponentDependencies implements JvmComponentDep
                 }
                 Configuration configuration = configurationContainer.findByName(name);
                 if (configuration == null) {
-                    return DynamicInvokeResult.notFound(getAdditionalContext(DefaultJvmComponentDependencies.this, name, arguments));
+                    return DynamicInvokeResult.notFound();
                 }
 
                 List<?> normalizedArgs = CollectionUtils.flattenCollections(arguments);
@@ -206,6 +200,11 @@ public abstract class DefaultJvmComponentDependencies implements JvmComponentDep
                     System.out.println("looks like you're trying to configure " + name + ", do <this> instead.");
                     return DynamicInvokeResult.notFound();
                 }
+            }
+
+            @Override
+            public AdditionalContext getAdditionalContext(String name, Object... arguments) {
+                return AdditionalContext.forString("PROBLEM CALLING " + name + " from " + DefaultJvmComponentDependencies.this.getClass().getName());
             }
         };
     }

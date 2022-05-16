@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package org.gradle.metaobject;
+package org.gradle.internal.metaobject;
 
-import org.gradle.internal.metaobject.DynamicInvokeResult.AdditionalContext;
+public interface MethodAccessWithContext extends MethodAccess, ProvidesMissingMethodContext {
 
-public interface ProvidesMissingMethodContext {
-    AdditionalContext getAdditionalContext(String name, Object... arguments);
 }

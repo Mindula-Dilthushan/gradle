@@ -83,7 +83,7 @@ public class ConfigureDelegate extends GroovyObjectSupport {
                 throw failure;
             }
 
-            throw _delegate.methodMissingException(name, params);
+            throw _delegate.methodMissingException(result, name, params);
         } finally {
             _configuring = isAlreadyConfiguring;
         }

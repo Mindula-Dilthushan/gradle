@@ -19,6 +19,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
+import org.gradle.internal.metaobject.DynamicInvokeResult.AdditionalContext;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -155,7 +156,12 @@ public abstract class AbstractDynamicObject implements DynamicObject {
 
     @Override
     public DynamicInvokeResult tryInvokeMethod(String name, Object... arguments) {
-        return DynamicInvokeResult.notFound();
+        if (this instanceof ProvidesMissingMethodContext) {
+            AdditionalContext context = ((ProvidesMissingMethodContext) this).getAdditionalContext(name, arguments);
+            return DynamicInvokeResult.notFound(context);
+        } else {
+            return DynamicInvokeResult.notFound();
+        }
     }
 
     @Override
@@ -165,23 +171,6 @@ public abstract class AbstractDynamicObject implements DynamicObject {
             return result.getValue();
         }
         throw methodMissingException(result, name, arguments);
-    }
-
-    @Override
-    public MissingMethodException methodMissingException(String name, Object... params) {
-        Class<?> publicType = getPublicType();
-        boolean includeDisplayName = hasUsefulDisplayName();
-        final String message;
-        if (publicType != null && includeDisplayName) {
-            message = String.format("Could not find method %s() for arguments %s on %s of type %s.", name, Arrays.toString(params), getDisplayName(), publicType.getName());
-        } else if (publicType != null) {
-            message = String.format("Could not find method %s() for arguments %s on object of type %s.", name, Arrays.toString(params), publicType.getName());
-        } else {
-            // Include the display name anyway
-            message = String.format("Could not find method %s() for arguments %s on %s.", name, Arrays.toString(params), getDisplayName());
-        }
-        // https://github.com/apache/groovy/commit/75c068207ba24648ea2d698c520601c6fcf0a45b
-        return new CustomMissingMethodExecutionFailed(name, publicType, message, params);
     }
 
     public MissingMethodException methodMissingException(DynamicInvokeResult result, String name, Object... params) {

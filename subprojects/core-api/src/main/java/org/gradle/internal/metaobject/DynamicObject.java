@@ -17,6 +17,7 @@ package org.gradle.internal.metaobject;
 
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
+import org.gradle.api.Incubating;
 
 /**
  * An object that can be worked with in a dynamic fashion.
@@ -37,9 +38,11 @@ public interface DynamicObject extends MethodAccess, PropertyAccess {
     MissingPropertyException setMissingProperty(String name);
 
     /**
-     * Creates a {@link MissingMethodException} for invoking an unknown method on this object.
+     * Creates a {@link MissingMethodException} for invoking an unknown method on this object, including
+     * any additional context information present on the result.
      */
-    MissingMethodException methodMissingException(String name, Object... params);
+    @Incubating
+    MissingMethodException methodMissingException(DynamicInvokeResult result, String name, Object... params);
 
     /**
      * Don't use this method. Use the overload {@link #tryGetProperty(String)} instead.
