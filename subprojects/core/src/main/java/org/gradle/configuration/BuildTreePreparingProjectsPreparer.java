@@ -26,7 +26,6 @@ import org.gradle.initialization.DependenciesAccessors;
 import org.gradle.initialization.buildsrc.BuildSourceBuilder;
 import org.gradle.internal.buildtree.BuildInclusionCoordinator;
 import org.gradle.internal.classpath.ClassPath;
-import org.gradle.internal.classpath.Instrumented;
 import org.gradle.internal.management.DependencyResolutionManagementInternal;
 import org.gradle.internal.service.ServiceRegistry;
 
