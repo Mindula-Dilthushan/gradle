@@ -77,7 +77,7 @@ public class BuildTreePreparingProjectsPreparer implements ProjectsPreparer {
         String defaultLibrary = dm.getDefaultLibrariesExtensionName().get();
         File dependenciesFile = new File(settings.getSettingsDir(), "gradle/libs.versions.toml");
         // Make the configuration cache aware the settings file
-        Instrumented.fileOpened(dependenciesFile, getClass().getName());
+        // Instrumented.fileOpened(dependenciesFile, getClass().getName());
         if (dependenciesFile.exists()) {
             dm.versionCatalogs(catalogs -> {
                 VersionCatalogBuilder builder = catalogs.findByName(defaultLibrary);
