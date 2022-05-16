@@ -16,6 +16,8 @@
 
 package org.gradle.internal.metaobject;
 
+import org.gradle.metaobject.ProvidesMissingMethodContext;
+
 /**
  * A decorated domain object type may optionally implement this interface to dynamically expose methods in addition to those declared statically on the type.
  *
@@ -23,4 +25,8 @@ package org.gradle.internal.metaobject;
  */
 public interface MethodMixIn {
     MethodAccess getAdditionalMethods();
+
+    default DynamicInvokeResult.AdditionalContext getAdditionalContext(ProvidesMissingMethodContext caller, String methodName, Object... arguments) {
+        return caller.getAdditionalContext(methodName, arguments);
+    }
 }

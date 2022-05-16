@@ -16,6 +16,7 @@
 
 package org.gradle.internal.metaobject
 
+import org.gradle.metaobject.ProvidesMissingMethodContext
 import spock.lang.Specification
 
 class CompositeDynamicObjectTest extends Specification {
@@ -157,5 +158,78 @@ class CompositeDynamicObjectTest extends Specification {
         then:
         def e = thrown MissingMethodException
         e.message.startsWith("No signature of method: ${CompositeDynamicObjectTest.name}.m() is applicable for argument types: (String) values: [value]")
+    }
+
+    def "providing context doesn't impact success if method found later"() {
+        def obj1 = Spy(ProvidingDynamicObject)
+        def obj2 = Mock(DynamicObject)
+        def obj3 = Mock(DynamicObject)
+        obj.setObjects(obj1, obj2, obj3)
+
+        when:
+        def result = obj.invokeMethod("m", ["value"] as Object[])
+
+        then:
+        result == "result"
+
+        and:
+        1 * obj1.tryInvokeMethod("m", ["value"] as Object[]) >> DynamicInvokeResult.notFound(obj1.getAdditionalContext("m", ["value"]))
+        1 * obj2.tryInvokeMethod("m", ["value"] as Object[]) >> DynamicInvokeResult.found("result")
+        0 * _
+    }
+
+    def "captures context from all levels if method missing and context available everywhere"() {
+        def obj1 = Spy(ProvidingDynamicObject)
+        def obj2 = Spy(ProvidingDynamicObject)
+        def obj3 = Spy(ProvidingDynamicObject)
+        obj.setObjects(obj1, obj2, obj3)
+
+        when:
+        def result = obj.invokeMethod("m", ["value"] as Object[])
+
+        then:
+        def e = thrown MissingMethodException
+        e.message.startsWith("Could not find method m() for arguments [value] on <obj>")
+        e.message.contains(ProvidingDynamicObject.contextFor(obj1).getMessage())
+        e.message.contains(ProvidingDynamicObject.contextFor(obj2).getMessage())
+        e.message.contains(ProvidingDynamicObject.contextFor(obj3).getMessage())
+
+        and:
+        1 * obj1.tryInvokeMethod("m", ["value"] as Object[]) >> DynamicInvokeResult.notFound(obj1.getAdditionalContext("m", ["value"]))
+        1 * obj2.tryInvokeMethod("m", ["value"] as Object[]) >> DynamicInvokeResult.notFound(obj2.getAdditionalContext("m", ["value"]))
+        1 * obj3.tryInvokeMethod("m", ["value"] as Object[]) >> DynamicInvokeResult.notFound(obj3.getAdditionalContext("m", ["value"]))
+        0 * _
+    }
+
+    def "captures context from all levels if method missing and context available only on some levels"() {
+        def obj1 = Mock(DynamicObject)
+        def obj2 = Spy(ProvidingDynamicObject)
+        def obj3 = Mock(DynamicObject)
+        obj.setObjects(obj1, obj2, obj3)
+
+        when:
+        def result = obj.invokeMethod("m", ["value"] as Object[])
+
+        then:
+        def e = thrown MissingMethodException
+        e.message.startsWith("Could not find method m() for arguments [value] on <obj>")
+        e.message.contains(ProvidingDynamicObject.contextFor(obj2).getMessage())
+
+        and:
+        1 * obj1.tryInvokeMethod("m", ["value"] as Object[]) >> DynamicInvokeResult.notFound()
+        1 * obj2.tryInvokeMethod("m", ["value"] as Object[]) >> DynamicInvokeResult.notFound(obj2.getAdditionalContext("m", ["value"]))
+        1 * obj3.tryInvokeMethod("m", ["value"] as Object[]) >> DynamicInvokeResult.notFound()
+        0 * _
+    }
+
+    static abstract class ProvidingDynamicObject implements DynamicObject, ProvidesMissingMethodContext {
+        @Override
+        default DynamicInvokeResult.AdditionalContext getAdditionalContext(String name, Object... arguments) {
+            return contextFor(this)
+        }
+
+        static contextFor(Object obj) {
+            return DynamicInvokeResult.AdditionalContext.forString("You can not call this method on " + obj)
+        }
     }
 }

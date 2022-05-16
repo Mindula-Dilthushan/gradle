@@ -94,12 +94,19 @@ public abstract class CompositeDynamicObject extends AbstractDynamicObject {
 
     @Override
     public DynamicInvokeResult tryInvokeMethod(String name, Object... arguments) {
+        DynamicInvokeResult pendingResultWithContext = null;
         for (DynamicObject object : objects) {
             DynamicInvokeResult result = object.tryInvokeMethod(name, arguments);
             if (result.isFound()) {
                 return result;
+            } else {
+                if (pendingResultWithContext == null) {
+                    pendingResultWithContext = result;
+                } else {
+                    pendingResultWithContext.addAdditionalContext(result);
+                }
             }
         }
-        return DynamicInvokeResult.notFound();
+        return pendingResultWithContext;
     }
 }

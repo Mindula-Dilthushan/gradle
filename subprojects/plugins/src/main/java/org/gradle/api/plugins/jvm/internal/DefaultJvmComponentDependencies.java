@@ -35,8 +35,10 @@ import org.gradle.api.provider.ProviderConvertible;
 import org.gradle.api.provider.ValueSource;
 import org.gradle.internal.Cast;
 import org.gradle.internal.metaobject.DynamicInvokeResult;
+import org.gradle.internal.metaobject.DynamicInvokeResult.AdditionalContext;
 import org.gradle.internal.metaobject.MethodAccess;
 import org.gradle.internal.metaobject.MethodMixIn;
+import org.gradle.metaobject.ProvidesMissingMethodContext;
 import org.gradle.util.internal.CollectionUtils;
 
 import javax.annotation.Nullable;
@@ -44,7 +46,7 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class DefaultJvmComponentDependencies implements JvmComponentDependencies, MethodMixIn {
+public abstract class DefaultJvmComponentDependencies implements JvmComponentDependencies, MethodMixIn, ProvidesMissingMethodContext {
     private final Configuration implementation;
     private final Configuration compileOnly;
     private final Configuration runtimeOnly;
@@ -162,6 +164,11 @@ public abstract class DefaultJvmComponentDependencies implements JvmComponentDep
     }
 
     @Override
+    public AdditionalContext getAdditionalContext(String name, Object... arguments) {
+        return AdditionalContext.forString("Don't call this here!");
+    }
+
+    @Override
     public MethodAccess getAdditionalMethods() {
         ConfigurationContainer configurationContainer = getConfigurationContainer();
         return new MethodAccess() {
@@ -177,7 +184,7 @@ public abstract class DefaultJvmComponentDependencies implements JvmComponentDep
                 }
                 Configuration configuration = configurationContainer.findByName(name);
                 if (configuration == null) {
-                    return DynamicInvokeResult.notFound();
+                    return DynamicInvokeResult.notFound(getAdditionalContext(DefaultJvmComponentDependencies.this, name, arguments));
                 }
 
                 List<?> normalizedArgs = CollectionUtils.flattenCollections(arguments);

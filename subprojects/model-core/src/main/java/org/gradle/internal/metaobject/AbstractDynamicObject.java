@@ -164,7 +164,7 @@ public abstract class AbstractDynamicObject implements DynamicObject {
         if (result.isFound()) {
             return result.getValue();
         }
-        throw methodMissingException(name, arguments);
+        throw methodMissingException(result, name, arguments);
     }
 
     @Override
@@ -182,6 +182,29 @@ public abstract class AbstractDynamicObject implements DynamicObject {
         }
         // https://github.com/apache/groovy/commit/75c068207ba24648ea2d698c520601c6fcf0a45b
         return new CustomMissingMethodExecutionFailed(name, publicType, message, params);
+    }
+
+    public MissingMethodException methodMissingException(DynamicInvokeResult result, String name, Object... params) {
+        Class<?> publicType = getPublicType();
+        boolean includeDisplayName = hasUsefulDisplayName();
+        final StringBuilder message = new StringBuilder();
+        if (publicType != null && includeDisplayName) {
+            message.append(String.format("Could not find method %s() for arguments %s on %s of type %s.", name, Arrays.toString(params), getDisplayName(), publicType.getName()));
+        } else if (publicType != null) {
+            message.append(String.format("Could not find method %s() for arguments %s on object of type %s.", name, Arrays.toString(params), publicType.getName()));
+        } else {
+            // Include the display name anyway
+            message.append(String.format("Could not find method %s() for arguments %s on %s.", name, Arrays.toString(params), getDisplayName()));
+        }
+        if (result.hasAdditionalContext()) {
+            result.getAdditionalContext().stream()
+                    .map(DynamicInvokeResult.AdditionalContext::getMessage)
+                    .map("\n\t"::concat)
+                    .forEach(message::append);
+        }
+
+        // https://github.com/apache/groovy/commit/75c068207ba24648ea2d698c520601c6fcf0a45b
+        return new CustomMissingMethodExecutionFailed(name, publicType, message.toString(), params);
     }
 
     private static class CustomMissingMethodExecutionFailed extends MissingMethodExecutionFailed {
