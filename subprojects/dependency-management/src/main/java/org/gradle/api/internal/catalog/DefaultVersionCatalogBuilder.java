@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.Configuration;
@@ -47,6 +48,7 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.internal.FileUtils;
+import org.gradle.internal.classpath.Instrumented;
 import org.gradle.internal.deprecation.DeprecationLogger;
 import org.gradle.internal.lazy.Lazy;
 import org.gradle.internal.management.VersionCatalogBuilderInternal;
@@ -55,6 +57,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
@@ -261,6 +264,7 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
             );
         }
     }
+
     private void importCatalogFromFile(File modelFile) {
         if (!FileUtils.hasExtensionIgnoresCase(modelFile.getName(), "toml")) {
             throwVersionCatalogProblem(VersionCatalogProblemId.UNSUPPORTED_FILE_FORMAT, spec ->
@@ -278,11 +282,9 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
                     .documented()
             );
         }
-        RegularFileProperty srcProp = objects.fileProperty();
-        srcProp.set(modelFile);
-        Provider<byte[]> dataSource = providers.fileContents(srcProp).getAsBytes();
+        Instrumented.fileObserved(modelFile, getClass().getName());
         try {
-            TomlCatalogFileParser.parse(new ByteArrayInputStream(dataSource.get()), this);
+            TomlCatalogFileParser.parse(new ByteArrayInputStream(Files.toByteArray(modelFile)), this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
