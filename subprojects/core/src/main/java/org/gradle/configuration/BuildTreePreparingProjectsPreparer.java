@@ -16,16 +16,19 @@
 
 package org.gradle.configuration;
 
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.initialization.dsl.VersionCatalogBuilder;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.SettingsInternal;
 import org.gradle.api.internal.file.FileCollectionFactory;
 import org.gradle.api.internal.initialization.ClassLoaderScope;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.initialization.BuildLoader;
 import org.gradle.initialization.DependenciesAccessors;
 import org.gradle.initialization.buildsrc.BuildSourceBuilder;
 import org.gradle.internal.buildtree.BuildInclusionCoordinator;
 import org.gradle.internal.classpath.ClassPath;
+import org.gradle.internal.classpath.Instrumented;
 import org.gradle.internal.management.DependencyResolutionManagementInternal;
 import org.gradle.internal.service.ServiceRegistry;
 
@@ -76,7 +79,8 @@ public class BuildTreePreparingProjectsPreparer implements ProjectsPreparer {
         String defaultLibrary = dm.getDefaultLibrariesExtensionName().get();
         File dependenciesFile = new File(settings.getSettingsDir(), "gradle/libs.versions.toml");
         // TODO:configuration-cache causes test failures (see "configuration cache for help on empty project")
-        //Instrumented.fileOpened(dependenciesFile, getClass().getName());
+        FileCollection dependenciesFileCollection = services.get(ObjectFactory.class).fileCollection().from(dependenciesFile);
+        Instrumented.fileCollectionObserved(dependenciesFileCollection, getClass().getName());
         if (dependenciesFile.exists()) {
             dm.versionCatalogs(catalogs -> {
                 VersionCatalogBuilder builder = catalogs.findByName(defaultLibrary);
